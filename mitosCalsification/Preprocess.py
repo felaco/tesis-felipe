@@ -1,6 +1,9 @@
-from PyQt5.QtCore import QDir
-import cv2
 import os
+
+import cv2
+from PyQt5.QtCore import QDir
+
+from common.Params import Params as P
 
 
 def rotateImageAndSave(image, baseName, path):
@@ -15,7 +18,7 @@ def rotateImageAndSave(image, baseName, path):
 
 
 #dirTrain1 = QDir('C:/Users/home/Desktop/mitos dataset/train/mitosis')
-dirTrain2 = QDir('C:/Users/home/Desktop/mitos dataset/train/noMitos')
+dirTrain2 = QDir(P().saveCutMitosDir)
 imagesFilter = ['*.png', '*.tif', '*.bmp']
 
 #info1 = dirTrain1.entryInfoList(imagesFilter)
@@ -31,13 +34,14 @@ for fileInfo in infoList:
     basePath = fileInfo.absolutePath() +'/'
     basenameExt = os.path.basename(imagePath)
     baseName, _ = os.path.splitext(basenameExt)
+    savePath = P().saveMitosisPreProcessed
 
     imbase = cv2.imread(imagePath)
     rows, cols, _ = imbase.shape
     imXMirror = cv2.flip(imbase, 1)
 
-    cv2.imwrite(basePath+baseName+'-mirror.png', imXMirror)
-    rotateImageAndSave(imbase, baseName, basePath)
-    rotateImageAndSave(imXMirror, baseName+'-mirror', basePath)
+    cv2.imwrite(savePath+baseName+'-mirror.png', imXMirror)
+    rotateImageAndSave(imbase, baseName, savePath)
+    rotateImageAndSave(imXMirror, baseName+'-mirror', savePath)
 
     print('%d / %d'%(i, len(infoList)))

@@ -1,7 +1,12 @@
-from PyQt5.QtCore import QDir
+import tarfile
+
 import cv2
 import numpy as np
+from PyQt5.QtCore import QDir
 
+from common.Params import Params as P
+
+imagesFilter = ['*.png', '*.tif', '*.bmp']
 
 def loadMitosDatasetTest():
     dirTest1 = QDir('C:/Users/home/Desktop/mitos dataset eval/test/mitosis')
@@ -11,7 +16,6 @@ def loadMitosDatasetTest():
     dirVal = QDir('C:/Users/home/Desktop/mitos dataset/cutted/noMitosis')
     dirVal2 = QDir('C:/Users/home/Desktop/mitos dataset eval/cutted/noMitosis')
 
-    imagesFilter = ['*.png', '*.tif', '*.bmp']
 
     mitosClassTestInfoList = dirTest1.entryInfoList(imagesFilter)
     noMitosClassTestInfoList = dirTest2.entryInfoList(imagesFilter)
@@ -36,6 +40,7 @@ def loadMitosDatasetTest():
         noMitosImageList.append(im)
         #basename = entryInfo.baseName()
         #noMitosNameList.append(path)
+    print('No-mitos test loaded...')
 
     for entryInfo in mitosClassTestInfoList:
         path = entryInfo.absoluteFilePath()
@@ -46,6 +51,8 @@ def loadMitosDatasetTest():
         basename = entryInfo.baseName()
         mitosNameList.append(basename)
 
+    print('mitos test loaded...')
+
     for entryInfo in mitosClassTrainInfoList:
         path = entryInfo.absoluteFilePath()
         im = cv2.imread(path).astype(np.float32)
@@ -53,12 +60,16 @@ def loadMitosDatasetTest():
         im /= 255
         mitosTrainList.append(im)
 
+    print('mitos train loaded...')
+
     for entryInfo in noMitosClassTrainInfoList:
         path = entryInfo.absoluteFilePath()
         im = cv2.imread(path).astype(np.float32)
         im = im.reshape(3, 63, 63)
         im /= 255
         noMitosTrainList.append(im)
+
+    print('no-mitos train loaded...')
 
 
     for entryInfo in valNoMitosInfoList:
@@ -71,6 +82,7 @@ def loadMitosDatasetTest():
         im /= 255
         hugeNoMitosList.append(im)
 
+    print('No-mitos candidates loaded...')
 
     xe = np.append(mitosTrainList, noMitosTrainList, axis=0)
     ye = np.append(np.zeros(len(mitosTrainList)), np.ones(len(noMitosTrainList)))
@@ -100,6 +112,8 @@ def loadMitosDatasetTest():
         noMitosNameList.append(path)
         i = 0
 
+    print('no mitos validation loaded...')
+
     retDict ={
         'xe':xe,
         'ye':ye,
@@ -112,5 +126,76 @@ def loadMitosDatasetTest():
 
     return retDict
 
-ret = loadMitosDatasetTest()
-i = 0
+class dataset:
+    def __init__(self, cand_file, mitos_folder):
+        self._cand_file = cand_file
+        self._mitos_folder = mitos_folder
+        self._cand_list = []
+        self._mitos_list = []
+        print("Cargando candidatos...")
+        self._load_candidates()
+        print("Cargando Mitos...")
+        if mitos_folder is not None:
+            self._load_mitos()
+            print("done...")
+
+    def get_training_sample(self, shuffle=True, selection = True):
+        selection_index = np.random.choice(len(self._cand_list),
+                                           len(self._mitos_list),
+                                           replace=False).astype(int)
+
+        if selection:
+            no_mitos_list = np.asarray(self._cand_list)[selection_index]
+        else:
+            no_mitos_list = np.asarray(self._cand_list)
+
+        xe = np.append(self._mitos_list, no_mitos_list, axis=0)
+        ye = np.append(np.zeros(len(self._mitos_list)),
+                       np.ones(len(no_mitos_list))).astype(int)
+
+        if shuffle:
+            shuffle_index = np.arange(len(xe))
+            np.random.shuffle(shuffle_index)
+            xe = xe[shuffle_index]
+            ye = ye[shuffle_index]
+
+        return xe,ye
+
+    def _load_candidates(self):
+        tar = tarfile.TarFile(self._cand_file, "r")
+        members = tar.getmembers()
+        self.tar_file_names = tar.getnames()
+
+        for mem in members:
+            f = tar.extractfile(mem)
+            if f is not None:
+                a = f.read()
+                encoded = np.frombuffer(a, dtype=np.uint8)
+                im = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+                self._cand_list.append(self._preprocess(im))
+
+    def _load_mitos(self):
+        dir = QDir(self._mitos_folder)
+        list = dir.entryInfoList(imagesFilter)
+
+        for entry in list:
+            path = entry.absoluteFilePath()
+            im = cv2.imread(path)
+            self._mitos_list.append(self._preprocess(im))
+
+    def _preprocess(self, im):
+        im = im.astype(np.float32)
+        im /= 255
+        return im
+
+
+
+
+
+if __name__ == "__main__":
+    train = dataset(P.Params().saveCutCandidatesDir + 'candidates.tar', P.Params().saveCutMitosDir)
+    xe, ye = train.get_training_sample()
+    test = dataset(P.Params().saveTestCandidates + 'candidates.tar', P.Params().saveTestMitos)
+    xt, yt = test.get_training_sample(shuffle=False, selection=False)
+    print(xe.shape, ye.shape)
+    print(xt.shape, yt.shape)

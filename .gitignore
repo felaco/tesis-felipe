@@ -62,10 +62,6 @@ dummy/
 .idea/
 
 
-#keras models
-*.h5
-
-
 #images
 *.bmp
 *.png
