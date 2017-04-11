@@ -8,6 +8,7 @@ from keras.layers.convolutional import Convolution2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.models import Sequential, model_from_json
 from keras.utils import np_utils
+import numpy as np
 
 from common.Params import Params as P
 from mitosCalsification import metrics, loadDataset as ld
@@ -15,7 +16,7 @@ from mitosCalsification import metrics, loadDataset as ld
 
 def write_test_output(true_output, pred_output):
     i = 0
-    file = open('resul.txt', 'w')
+    file = open('resulados.txt', 'w')
     file.write('true\tpred\n')
     while i < len(true_output):
         file.write('{}\t\t{}\n'.format(true_output[i], pred_output[i]))
@@ -47,6 +48,22 @@ def getInputDim():
 
     return dim
 
+def _get_class_weights(labels):
+    import math
+    weight_dict = {}
+    total = len(labels)
+    unique = np.unique(labels, return_counts=True)
+    i = 0
+    while i < len(unique):
+        classes_count = unique[1]
+        class_count = classes_count[i]
+        weight = math.log(total / class_count, 1.7) # base = 1.7
+        if weight < 1:
+            weight = 1
+        weight_dict[i] = weight
+        i += 1
+
+    return weight_dict
 
 def createModel():
     model = Sequential()
@@ -87,30 +104,44 @@ def createModel():
 
     return model
 
+def train_model(ratio, use_all):
+    selection = True
+    if use_all:
+        selection = False
+    elif ratio <= 0:
+        raise ValueError('ratio cannot be neither negative nor 0')
+    train = ld.dataset(P().saveCutCandidatesDir + 'candidates.tar', P().saveMitosisPreProcessed)
+    xe, ye = train.get_training_sample(ratio=ratio, selection=selection)
 
-train = ld.dataset(P().saveCutCandidatesDir + 'candidates.tar', P().saveMitosisPreProcessed)
-xe, ye = train.get_training_sample()
-test = ld.dataset(P().saveTestCandidates + 'candidates.tar', P().saveTestMitos)
-xt, yt = test.get_training_sample(shuffle=False, selection=False)
-yt2 = np_utils.to_categorical(yt)
-
-target = np_utils.to_categorical(ye)
-
-if os.path.isfile('model.json'):
-    model = load_model()
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=[metrics.mitos_fscore])
-else:
+    target = np_utils.to_categorical(ye)
     model = createModel()
     # res = fitAndEvaluate(model, xe, target,)
     # print(res)
-    model.fit(xe, target, epochs=10, verbose=2, validation_split=0.1)
+    model.fit(xe, target, epochs=30, verbose=2, validation_split=0.1)
     save_model(model)
 
 
+def test_model():
+    test = ld.dataset(P().saveTestCandidates + 'candidates.tar', P().saveTestMitos)
+    xt, yt = test.get_training_sample(shuffle=False, selection=False)
+    yt_cat = np_utils.to_categorical(yt)
 
-res = model.evaluate(xt, yt2, verbose=0)
-res2 = model.predict_classes(xt, verbose=0)
-print(res)
-write_test_output(yt, res2)
+    if os.path.isfile('model.json'):
+        model = load_model()
+        model.compile(loss='categorical_crossentropy',
+                      optimizer='rmsprop',
+                      metrics=[metrics.mitos_fscore])
+    else:
+        raise FileNotFoundError('There is no model saved')
+
+    #res = model.evaluate(xt, yt2, verbose=0)
+    res = model.predict_classes(xt, verbose=0)
+    cat_res = np_utils.to_categorical(res)
+    fscore = K.eval(metrics.mitos_fscore(yt_cat, cat_res))
+    print(fscore)
+    write_test_output(yt, res)
+
+if __name__ == '__main__':
+    train = ld.dataset(P().saveCutCandidatesDir + 'candidates.tar', P().saveMitosisPreProcessed)
+    xe, ye = train.get_training_sample(selection=False)
+    _get_class_weights(ye)

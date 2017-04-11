@@ -29,7 +29,6 @@ class Params:
 
         if platform == 'win32':
             self.normHeStainDir = "C:/Users/felipe/mitos dataset/normalizado/heStain/"
-            self.boolSaveCandidatesWholeImg = True
             self.saveCandidatesWholeImgDir = "C:/Users/felipe/mitos dataset/train/print/"
             self.saveCutCandidatesDir = "C:/Users/felipe/mitos dataset/train/candidates/"
             self.saveMitosisPreProcessed = "C:/Users/felipe/mitos dataset/train/mitosis/preProcessed/"
@@ -41,7 +40,6 @@ class Params:
             self.mitosAnotationJsonPath = "C:/Users/felipe/mitos dataset/anotations/MitosAnotations.json"
         elif platform == 'linux':
             self.normHeStainDir = "/home/facosta/dataset/normalizado/heStain/"
-            self.boolSaveCandidatesWholeImg = True
             self.saveCandidatesWholeImgDir = "/home/facosta/dataset/train/print/"
             self.saveCutCandidatesDir = "/home/facosta/dataset/train/candidates/"
             self.saveMitosisPreProcessed = "/home/facosta/dataset/train/mitosis/preProcessed/"
@@ -52,3 +50,7 @@ class Params:
             self.candidatesTestJsonPath = "/home/facosta/dataset/anotations/testCandidates.json"
             self.mitosAnotationJsonPath = "/home/facosta/dataset/anotations/MitosAnotations.json"
 
+
+Params().saveTestMitos = False
+Params().saveMitosisPreProcessed = False
+i=0

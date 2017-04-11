@@ -61,7 +61,9 @@ target/
 dummy/
 .idea/
 
-
 #images
 *.bmp
 *.png
+
+#text files
+*.txt

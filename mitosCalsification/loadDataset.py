@@ -8,125 +8,11 @@ from common.Params import Params as P
 
 imagesFilter = ['*.png', '*.tif', '*.bmp']
 
-def loadMitosDatasetTest():
-    dirTest1 = QDir('C:/Users/home/Desktop/mitos dataset eval/test/mitosis')
-    dirTest2 = QDir('C:/Users/home/Desktop/mitos dataset eval/test/noMitosis')
-    dirTrain1 = QDir('C:/Users/home/Desktop/mitos dataset/train/mitosis')
-    dirTrain2 = QDir('C:/Users/home/Desktop/mitos dataset/train/noMitos')
-    dirVal = QDir('C:/Users/home/Desktop/mitos dataset/cutted/noMitosis')
-    dirVal2 = QDir('C:/Users/home/Desktop/mitos dataset eval/cutted/noMitosis')
-
-
-    mitosClassTestInfoList = dirTest1.entryInfoList(imagesFilter)
-    noMitosClassTestInfoList = dirTest2.entryInfoList(imagesFilter)
-    mitosClassTrainInfoList = dirTrain1.entryInfoList(imagesFilter)
-    noMitosClassTrainInfoList = dirTrain2.entryInfoList(imagesFilter)
-    validationInfoList = dirVal.entryInfoList(imagesFilter)
-    valNoMitosInfoList = dirVal2.entryInfoList(imagesFilter)
-
-    mitosImageList = []
-    mitosNameList = []
-    noMitosImageList = []
-    noMitosNameList = []
-    mitosTrainList = []
-    noMitosTrainList = []
-    hugeNoMitosList = []
-
-    for entryInfo in noMitosClassTestInfoList:
-        path = entryInfo.absoluteFilePath()
-        im = cv2.imread(path).astype(np.float32)
-        im = im.reshape(3, 63, 63)
-        im /= 255
-        noMitosImageList.append(im)
-        #basename = entryInfo.baseName()
-        #noMitosNameList.append(path)
-    print('No-mitos test loaded...')
-
-    for entryInfo in mitosClassTestInfoList:
-        path = entryInfo.absoluteFilePath()
-        im = cv2.imread(path).astype(np.float32)
-        im = im.reshape(3, 63, 63)
-        im /= 255
-        mitosImageList.append(im)
-        basename = entryInfo.baseName()
-        mitosNameList.append(basename)
-
-    print('mitos test loaded...')
-
-    for entryInfo in mitosClassTrainInfoList:
-        path = entryInfo.absoluteFilePath()
-        im = cv2.imread(path).astype(np.float32)
-        im = im.reshape(3, 63, 63)
-        im /= 255
-        mitosTrainList.append(im)
-
-    print('mitos train loaded...')
-
-    for entryInfo in noMitosClassTrainInfoList:
-        path = entryInfo.absoluteFilePath()
-        im = cv2.imread(path).astype(np.float32)
-        im = im.reshape(3, 63, 63)
-        im /= 255
-        noMitosTrainList.append(im)
-
-    print('no-mitos train loaded...')
-
-
-    for entryInfo in valNoMitosInfoList:
-        path = entryInfo.absoluteFilePath()
-        im = cv2.imread(path).astype(np.float32)
-        shape = im.shape
-        if shape[0] != 63 or shape[1] != 63:
-            print(path)
-        im = im.reshape(3, 63, 63)
-        im /= 255
-        hugeNoMitosList.append(im)
-
-    print('No-mitos candidates loaded...')
-
-    xe = np.append(mitosTrainList, noMitosTrainList, axis=0)
-    ye = np.append(np.zeros(len(mitosTrainList)), np.ones(len(noMitosTrainList)))
-    idx = np.arange(len(xe))
-    np.random.shuffle(idx)
-    xe = xe[idx]
-    ye = ye[idx]
-
-    xv = np.append(mitosImageList, noMitosImageList, axis=0)
-    yv = np.append(np.zeros(len(mitosImageList)), np.ones(len(noMitosImageList)))
-    idx = np.arange(len(xv))
-    np.random.shuffle(idx)
-    xv = xv[idx]
-    yv = yv[idx]
-
-
-    noMitosValImageList = []
-    for entryInfo in validationInfoList:
-        path = entryInfo.absoluteFilePath()
-        im = cv2.imread(path).astype(np.float32)
-        shape = im.shape
-        if shape[0] != 63 or shape[1] != 63:
-            print(path)
-        im = im.reshape(3, 63, 63)
-        im /= 255
-        noMitosValImageList.append(im)
-        noMitosNameList.append(path)
-        i = 0
-
-    print('no mitos validation loaded...')
-
-    retDict ={
-        'xe':xe,
-        'ye':ye,
-        'xv':xv,
-        'yv':yv,
-        'noMitosTest':np.array(noMitosValImageList),
-        'noMitosFile':noMitosNameList,
-        'finalVal': np.array(hugeNoMitosList)
-    }
-
-    return retDict
-
 class dataset:
+    """
+    Instantiate to load the mitosis dataset. 
+    Call the method get_training_sample to be able to use the dataset.
+    """
     def __init__(self, cand_file, mitos_folder):
         self._cand_file = cand_file
         self._mitos_folder = mitos_folder
@@ -139,9 +25,20 @@ class dataset:
             self._load_mitos()
             print("done...")
 
-    def get_training_sample(self, shuffle=True, selection = True):
+    def get_training_sample(self, ratio = 1, shuffle=True, selection = True):
+        """
+        Create two arrays that can be used to train a model. The first one is the input for a model,
+        the second one is the expected output
+        :param ratio: The ratio between the amount of element of the mitosis class versus the no mitosis class
+        :param shuffle: Choose true to shuffle the samples 
+        :param selection: Select a sample of the no-mitosis or all of them
+        :return: the input of a model and the expected output
+        """
+        if ratio <= 0:
+            raise ValueError('ratio cannot be neither negative nor 0')
+
         selection_index = np.random.choice(len(self._cand_list),
-                                           len(self._mitos_list),
+                                           size=len(self._mitos_list) * ratio,
                                            replace=False).astype(int)
 
         if selection:

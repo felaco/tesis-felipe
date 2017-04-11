@@ -22,7 +22,7 @@ class Candidates_extractor_params:
         self.candidates_save_as_tar = True
         self.mitosis_save_as_tar = False
         self.write_img_to_disk = True
-        self.save_img_with_keypoints = True
+        self.bsave_img_keypoints = False
 
 class Candidates_extractor:
     def __init__(self, params):
@@ -66,7 +66,7 @@ class Candidates_extractor:
                 mitos_list = self.verificator.get_mitos_points(file.baseName())
                 self._write_img_disk(candidates, mitos_list)
 
-            if self.params.save_img_with_keypoints:
+            if self.params.bsave_img_keypoints:
                 self.__save_img_with_key_points(color_image, keypoints)
 
             if self.mitos_cutter is not None:

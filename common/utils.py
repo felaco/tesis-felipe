@@ -40,7 +40,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = ' ')
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '')
     sys.stdout.flush()
     # Print New Line on Complete
     if iteration == total:
@@ -110,10 +110,17 @@ class MitosVerification:
     def print_verification_result(self):
         mitos_count = self.get_mitos_count()
         if self.verificated_mitos < mitos_count:
+            fill = ' '
+            clean_text = fill * 90
+            # for some reason when i call this function from the main program, carriage return(\r)
+            # doesnt clean the line, so i 'clean' it manually by printing spaces
+            sys.stdout.write('\r' + clean_text + '\r')
             print('\r{} {}/{}'.format(self.base_name,
                                     self.verificated_mitos,
                                     mitos_count))
 
+class Mitos_test_validator:
+    pass
 
 if __name__ == "__main__":
     im = cv2.imread("C:/Users/home/a.png")
