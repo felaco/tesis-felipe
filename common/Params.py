@@ -27,7 +27,12 @@ class Params:
 
         self.blobDetectorParams.thresholdStep = 25
 
+        self.candidates_size = 80
+        self.model_input_size = 80
+        self.model_epoch = 40
+
         if platform == 'win32':
+            self.basedir = "C:/Users/felipe/mitos dataset/"
             self.normHeStainDir = "C:/Users/felipe/mitos dataset/normalizado/heStain/"
             self.saveCandidatesWholeImgDir = "C:/Users/felipe/mitos dataset/train/print/"
             self.saveCutCandidatesDir = "C:/Users/felipe/mitos dataset/train/candidates/"
@@ -44,13 +49,8 @@ class Params:
             self.saveCutCandidatesDir = "/home/facosta/dataset/train/candidates/"
             self.saveMitosisPreProcessed = "/home/facosta/dataset/train/mitosis/preProcessed/"
             self.saveCutMitosDir = "/home/facosta/dataset/train/mitosis/"
-            self.saveTestCandidates = "/home/facosta/dataset/test/"
-            self.saveTestMitos = "/home/facosta/dataset/test/mitosis/"
+            self.saveTestCandidates = "/home/facosta/dataset/eval/no-mitosis/"
+            self.saveTestMitos = "/home/facosta/dataset/eval/mitosis/"
             self.candidatesTrainingJsonPath = "/home/facosta/dataset/anotations/trainCandidates.json"
             self.candidatesTestJsonPath = "/home/facosta/dataset/anotations/testCandidates.json"
             self.mitosAnotationJsonPath = "/home/facosta/dataset/anotations/MitosAnotations.json"
-
-
-Params().saveTestMitos = False
-Params().saveMitosisPreProcessed = False
-i=0

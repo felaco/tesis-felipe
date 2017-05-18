@@ -6,6 +6,8 @@ from mitos_extract_anotations import candidateSelection as cs
 from common.Params import Params as P
 from common import utils
 from mitosCalsification import Preprocess
+import numpy as np
+import random
 
 filter = ['*.bmp', '*.png', '*.jpg']
 
@@ -58,27 +60,40 @@ def extract_candidates(args):
     # split the files in training and testing
     file_list = utils.listFiles(folder_path, filter)
     train_count = len(file_list)- args.number_test_img
-    train_list = file_list [0:train_count]
-    test_list = file_list [- args.number_test_img:]
-    train_params = cs.Candidates_extractor_params(train_list)
+    # train_list = file_list [0:train_count]
+    # test_list = file_list [- args.number_test_img:]
+
+    # selects a sample of random files in the list and
+    # save  some for validation and the rest for training
+    selection_index = random.sample(range(len(file_list)), k=args.number_test_img)
+    test_list = [file_list[i] for i in selection_index]
+    for i in sorted(selection_index, reverse=True):
+        del file_list[i]
+
+    train_params = cs.Candidates_extractor_params(file_list)
     test_params = cs.Candidates_extractor_params(test_list)
 
     if args.dont_save:
         train_params.write_img_to_disk = False
         test_params.write_img_to_disk = False
 
+    #test_params.write_img_to_disk = False
     if args.save_img_keypoint:
-        pass
+        train_params.bsave_img_keypoints = True
+        test_params.bsave_img_keypoints = True
 
     # specific params for testing
     test_params.save_candidates_dir_path = P().saveTestCandidates
     test_params.save_mitosis_dir_path = P().saveTestMitos
+    # test_params.save_mitosis_dir_path = None
+    test_params.candidates_json_save_path = P().candidatesTestJsonPath
 
     train_extractor = cs.Candidates_extractor(train_params)
     test_extractor = cs.Candidates_extractor(test_params)
 
     train_extractor.extract()
-    test_extractor.extract()
+    if args.number_test_img > 0:
+        test_extractor.extract()
 
 def pre_process(args):
     Preprocess.pre_process()

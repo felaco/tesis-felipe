@@ -69,6 +69,7 @@ class dataset:
                 a = f.read()
                 encoded = np.frombuffer(a, dtype=np.uint8)
                 im = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+                im = self._resize(im)
                 self._cand_list.append(self._preprocess(im))
 
     def _load_mitos(self):
@@ -78,14 +79,30 @@ class dataset:
         for entry in list:
             path = entry.absoluteFilePath()
             im = cv2.imread(path)
+            im = self._resize(im)
             self._mitos_list.append(self._preprocess(im))
 
     def _preprocess(self, im):
         im = im.astype(np.float32)
         im /= 255
+        mean_dev = cv2.meanStdDev(im)
+        mean = mean_dev[0]
+        std_dev = mean_dev[1]
+        im[:,:,0] -= mean[0]
+        im[:,:,1] -= mean[1]
+        im[:,:,2] -= mean[2]
+        # im[:, :, 0] /= std_dev[0]
+        # im[:, :, 1] /= std_dev[1]
+        # im[:, :, 2] /= std_dev [2]
         return im
 
+    def _resize(self, im):
+        height = im.shape[0]
+        if height == P().model_input_size:
+            return im
 
+        size = P().model_input_size
+        return cv2.resize(im,(size,size), interpolation=cv2.INTER_CUBIC)
 
 
 

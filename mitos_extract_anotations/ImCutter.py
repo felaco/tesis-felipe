@@ -34,29 +34,22 @@ class ImCutter:
             self.tar_name = tar_name
             self.tar = tarfile.TarFile(name=self.tar_name, mode="a")
 
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def cut_and_save(self, col_center, row_center):
+    def cut_and_save(self, col_center, row_center, save_to_disk=True):
         left, right, top, bottom = self.get_borders(row_center, col_center)
         # numpy indexing is [inclusive:exclusive], that's why i add 1
         cut = self._im[top:bottom + 1, left:right + 1]
         cut2 = self.pad_image(cut, row_center, col_center)
 
-
-        save_name = self._base_name + '-' + str(self._save_count) + '.png'
-        if self.save_as_tar:
-            self.save_to_tar(save_name, cut2)
-            pass
-        else:
-            # i don't use os.path.join because opencv uses unix style path even on windows
-            save_path = join_path(self._saveDir, save_name)
-            cv2.imwrite(save_path, cut2)
-        self._save_count += 1
+        if save_to_disk:
+            save_name = self._base_name + '-' + str(self._save_count) + '.png'
+            if self.save_as_tar:
+                self.save_to_tar(save_name, cut2)
+                pass
+            else:
+                # i don't use os.path.join because opencv uses unix style path even on windows
+                save_path = join_path(self._saveDir, save_name)
+                cv2.imwrite(save_path, cut2)
+            self._save_count += 1
 
     def get_borders(self, row_center, col_center):
         shape = self._im.shape
@@ -139,3 +132,15 @@ class ImCutter:
             for fileinfo in filelist:
                 im_path = fileinfo.absoluteFilePath()
                 os.remove(im_path)
+
+
+class No_save_ImCutter(ImCutter):
+    def __init__(self, im, cut_size=63):
+        self._im = im
+        self._cut_size = int(cut_size / 2)
+
+    def cut(self, row_center, col_center):
+        assert isinstance(self._im, np.ndarray)
+        left, right, top, bottom = self.get_borders(row_center, col_center)
+        cut = self._im[top:bottom + 1, left:right + 1]
+        return self.pad_image(cut, row_center, col_center)

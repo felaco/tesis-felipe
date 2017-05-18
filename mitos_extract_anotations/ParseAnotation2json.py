@@ -46,7 +46,7 @@ def findCentroidsByBounRect(point):
     return cy, cx
 
 
-baseDir = 'C:/Users/home/Desktop/mitos dataset/'
+baseDir = 'C:/Users/felipe/Downloads/mitosis_evaluation_set_A/eval/'
 filter = ['*.csv']
 
 fileList = utils.listFiles(baseDir, filter)
@@ -75,6 +75,6 @@ for fileInfo in fileList:
 
 parsed = json.dumps(jsonDict, indent=4, sort_keys=True)
 
-file = open('C:/Users/home/Desktop/New folder/MitosAnotations.json', 'w')
+file = open('C:/Users/felipe/Desktop/MitosEval.json', 'w')
 file.write(parsed)
 file.close()
